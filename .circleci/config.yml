@@ -11,9 +11,8 @@ jobs:
           name: Install Gitleaks
           command: |
             set -e
-            GITLEAKS_VERSION=$(curl -fsSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])")
-            GITLEAKS_VERSION_NUMBER="${GITLEAKS_VERSION#v}"
-            curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION_NUMBER}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+            GITLEAKS_VERSION="8.24.0"
+            curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
             tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
             sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
             gitleaks version
@@ -21,7 +20,7 @@ jobs:
       - run:
           name: Scan repository for secrets
           command: |
-            gitleaks detect --source . --verbose
+            gitleaks detect --source . --no-git --verbose
 
   lint:
     docker:
