@@ -6,11 +6,18 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
+
       - run:
           name: Install Gitleaks
           command: |
-            curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/install.sh \
-              | sh -s -- -b /usr/local/bin
+            set -e
+            GITLEAKS_VERSION=$(curl -fsSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])")
+            GITLEAKS_VERSION_NUMBER="${GITLEAKS_VERSION#v}"
+            curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION_NUMBER}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+            tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+            sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+            gitleaks version
+
       - run:
           name: Scan repository for secrets
           command: |
@@ -21,20 +28,24 @@ jobs:
       - image: cimg/python:3.12
     steps:
       - checkout
+
       - restore_cache:
           keys:
             - python-deps-v1-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
             - python-deps-v1-
+
       - run:
           name: Install dependencies
           command: |
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             pip install -r requirements-dev.txt
+
       - save_cache:
           key: python-deps-v1-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
           paths:
             - ~/.cache/pip
+
       - run:
           name: Run Ruff
           command: |
@@ -45,12 +56,14 @@ jobs:
       - image: cimg/python:3.12
     steps:
       - checkout
+
       - run:
           name: Install dependencies
           command: |
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             pip install -r requirements-dev.txt
+
       - run:
           name: Run unit tests
           command: |
@@ -65,26 +78,33 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: linkboard_test
       - image: cimg/redis:7.2
+
     environment:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/linkboard_test
       REDIS_URL: redis://localhost:6379/0
+
     steps:
       - checkout
+
       - run:
           name: Install dependencies
           command: |
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             pip install -r requirements-dev.txt
+
       - run:
           name: Wait for PostgreSQL and Redis
           command: |
+            set -e
+
             for i in $(seq 1 30); do
               if python -c "import socket; s=socket.create_connection(('localhost', 5432), 2); s.close()" 2>/dev/null; then
                 break
               fi
               sleep 2
             done
+
             python -c "import socket; s=socket.create_connection(('localhost', 5432), 2); s.close()"
 
             for i in $(seq 1 30); do
@@ -93,7 +113,9 @@ jobs:
               fi
               sleep 2
             done
+
             python -c "import socket; s=socket.create_connection(('localhost', 6379), 2); s.close()"
+
       - run:
           name: Run integration tests
           command: |
@@ -105,10 +127,12 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+
       - run:
           name: Build Docker image
           command: |
             docker build -t bhuvangouda/link-board:qa .
+
       - run:
           name: Publish Docker image when credentials are configured
           command: |
@@ -127,15 +151,19 @@ workflows:
   main-pipeline:
     jobs:
       - secret-scan
+
       - lint:
           requires:
             - secret-scan
+
       - unit-tests:
           requires:
             - lint
+
       - integration-tests:
           requires:
             - unit-tests
+
       - docker-build:
           requires:
             - integration-tests
