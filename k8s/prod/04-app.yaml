@@ -94,7 +94,7 @@ spec:
       containers:
         - name: link-board
           image: bhuvangouda/link-board:prod
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
               name: http
