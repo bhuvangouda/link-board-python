@@ -27,20 +27,6 @@ stringData:
   POSTGRES_USER: linkboard
   POSTGRES_PASSWORD: linkboard
 ---
-# Placeholder secret for pulling private Docker Hub images.
-# Run: kubectl create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=<username> --docker-password=<token> --docker-email=<email> -n stage
-apiVersion: v1
-kind: Secret
-metadata:
-  name: regcred
-  namespace: stage
-  labels:
-    app.kubernetes.io/name: link-board
-    environment: stage
-type: kubernetes.io/dockerconfigjson
-data:
-  .dockerconfigjson: eyJhdXRocyI6e319
----
 # ConfigMap storing the database migration and seed scripts
 apiVersion: v1
 kind: ConfigMap

@@ -17,8 +17,6 @@ spec:
         app: link-board
         environment: prod
     spec:
-      imagePullSecrets:
-        - name: regcred
       initContainers:
         # 1. Wait for PostgreSQL to become reachable and accept connections
         - name: wait-for-postgres
