@@ -238,15 +238,15 @@ app (depends_on: migration completed, redis healthy)
 ## CircleCI
 
 ```
-lint  →  unit tests  →  integration tests  →  secret scan  →  docker build
+secret scan  →  lint  →  unit tests  →  integration tests  →  docker build
 ```
 
 | Stage | What it does |
 |---|---|
+| `secret-scan` | `gitleaks detect` — no hardcoded passwords or tokens |
 | `lint` | `ruff check app/ tests/` |
 | `unit-tests` | `pytest tests/unit/ --cov=app` (no external services) |
 | `integration-tests` | `pytest tests/integration/` with Postgres + Redis **service containers** |
-| `secret-scan` | `gitleaks detect` — no hardcoded passwords or tokens |
 | `docker-build` | `docker build` + optional `docker push` to Docker Hub |
 
 ### CI Networking
