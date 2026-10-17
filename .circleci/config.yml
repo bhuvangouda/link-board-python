@@ -116,6 +116,20 @@ jobs:
             python -c "import socket; s=socket.create_connection(('localhost', 6379), 2); s.close()"
 
       - run:
+          name: Apply database migrations
+          command: |
+            python -c "
+            import glob, os, psycopg
+            db_url = os.environ['DATABASE_URL']
+            with psycopg.connect(db_url, autocommit=True) as conn:
+                for sql_file in sorted(glob.glob('migrations/*.sql')):
+                    print(f'Applying {sql_file}...')
+                    with open(sql_file, 'r', encoding='utf-8') as f:
+                        conn.execute(f.read())
+            print('All migrations applied successfully.')
+            "
+
+      - run:
           name: Run integration tests
           command: |
             python -m pytest tests/integration/ -v
